@@ -5,8 +5,7 @@ import (
 	"log"
 
 	"github.com/BurntSushi/toml"
-
-	"github.com/spolyakovs/racing-backend-ifmo/internal/apiserver"
+	"github.com/spolyakovs/racing-backend-ifmo/internal/app/apiserver"
 )
 
 var (
@@ -26,9 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server := apiserver.New(config)
-
-	if err := server.Start(config); err != nil {
+	if err := apiserver.Start(config); err != nil {
 		log.Fatal(err)
 	}
 }
