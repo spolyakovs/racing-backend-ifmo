@@ -21,15 +21,15 @@ type ctxKey int8
 type server struct {
 	router       *mux.Router
 	logger       *logrus.Logger
-	store        store.Store
+	store        *store.Store
 	sessionStore sessions.Store
 }
 
-func newServer(store store.Store, sessionStore sessions.Store) *server {
+func newServer(st *store.Store, sessionStore sessions.Store) *server {
 	server := &server{
 		router:       mux.NewRouter(),
 		logger:       logrus.New(),
-		store:        store,
+		store:        st,
 		sessionStore: sessionStore,
 	}
 

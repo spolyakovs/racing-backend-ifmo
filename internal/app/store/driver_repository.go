@@ -1,8 +1,7 @@
-package sqlstore
+package store
 
 import (
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/model"
-	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
 )
 
 type DriverRepository struct {
@@ -66,7 +65,7 @@ func (driverRepository *DriverRepository) Update(driver *model.Driver) error {
 	}
 
 	if count == 0 {
-		return store.ErrRecordNotFound
+		return ErrRecordNotFound
 	}
 
 	return nil
@@ -91,7 +90,7 @@ func (driverRepository *DriverRepository) Delete(id int) error {
 	}
 
 	if count == 0 {
-		return store.ErrRecordNotFound
+		return ErrRecordNotFound
 	}
 
 	return nil

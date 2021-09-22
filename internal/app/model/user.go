@@ -7,11 +7,21 @@ import (
 )
 
 type User struct {
-	ID                int    `json:"id"`
 	Username          string `json:"username"`
 	Email             string `json:"email"`
-	Password          string `json:"password,omitempty"`
 	EncryptedPassword string `json:"-"`
+	Password          string `json:"password,omitempty"`
+	DefaultModel
+}
+
+func (user *User) GetFields() []interface{} {
+
+	return append(
+		[]interface{}{&user.ID},
+		&user.Username,
+		&user.Email,
+		&user.EncryptedPassword,
+	)
 }
 
 func (user *User) Validate() error {

@@ -7,4 +7,9 @@ test:
 	make build
 	go test -v -race -timeout 30s ./...
 
-.DEFAULT_GOAL := build
+.PHONY: start
+start:
+	make build
+	./apiserver
+
+.DEFAULT_GOAL := start

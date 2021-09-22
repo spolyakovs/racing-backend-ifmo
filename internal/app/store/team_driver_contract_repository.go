@@ -1,10 +1,9 @@
-package sqlstore
+package store
 
 import (
 	"database/sql"
 
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/model"
-	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
 )
 
 type TeamDriverContractRepository struct {
@@ -35,7 +34,7 @@ func (teamDriverContractRepository *TeamDriverContractRepository) Find(id int) (
 
 	if rowsErr != nil {
 		if rowsErr == sql.ErrNoRows {
-			return nil, store.ErrRecordNotFound
+			return nil, ErrRecordNotFound
 		}
 
 		return nil, rowsErr
@@ -59,7 +58,7 @@ func (teamDriverContractRepository *TeamDriverContractRepository) FindCurrentByT
 	)
 	if rowsErr != nil {
 		if rowsErr == sql.ErrNoRows {
-			return nil, store.ErrRecordNotFound
+			return nil, ErrRecordNotFound
 		}
 
 		return nil, rowsErr
@@ -92,7 +91,7 @@ func (teamDriverContractRepository *TeamDriverContractRepository) FindCurrentByD
 		id,
 	).Scan(&contractID); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, store.ErrRecordNotFound
+			return nil, ErrRecordNotFound
 		}
 		return nil, err
 	}
@@ -128,7 +127,7 @@ func (teamDriverContractRepository *TeamDriverContractRepository) Update(teamDri
 	}
 
 	if count == 0 {
-		return store.ErrRecordNotFound
+		return ErrRecordNotFound
 	}
 
 	return nil
@@ -153,7 +152,7 @@ func (teamDriverContractRepository *TeamDriverContractRepository) Delete(id int)
 	}
 
 	if count == 0 {
-		return store.ErrRecordNotFound
+		return ErrRecordNotFound
 	}
 
 	return nil

@@ -1,9 +1,9 @@
-package store
+package model
 
 import "errors"
 
 var (
-	ErrWrongTable     = errors.New("Wrong table name")
+	ErrGetFields      = errors.New("Cannot get fields from default model")
 	ErrWrongModel     = errors.New("Given wrong model")
 	ErrRecordNotFound = errors.New("Record not found")
 )
