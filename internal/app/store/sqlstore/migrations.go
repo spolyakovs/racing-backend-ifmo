@@ -1,4 +1,4 @@
-package store
+package sqlstore
 
 func (store *Store) createTables() error {
 	if err := store.createTableUsers(); err != nil {

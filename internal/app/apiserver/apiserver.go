@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/sessions"
 	_ "github.com/lib/pq"
-	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
+	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store/sqlstore"
 )
 
 func Start(config *Config) error {
@@ -17,7 +17,7 @@ func Start(config *Config) error {
 
 	defer db.Close()
 
-	store, storeErr := store.New(db)
+	store, storeErr := sqlstore.New(db)
 	if storeErr != nil {
 		return storeErr
 	}

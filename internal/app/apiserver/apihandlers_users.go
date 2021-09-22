@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/model"
@@ -50,7 +49,6 @@ func (server *server) handleLogin() http.HandlerFunc {
 
 		user, err := server.store.User().FindByEmail(requestStruct.Email)
 		if err != nil || !user.ComparePassword(requestStruct.Password) {
-			fmt.Println("Error " + err.Error())
 			server.error(writer, req, http.StatusUnauthorized, errIncorrectEmailOrPassword)
 			return
 		}

@@ -1,4 +1,4 @@
-package store_test
+package sqlstore_test
 
 // TODO: add tests
 // func TestUserRepository_Create(t *testing.T) {

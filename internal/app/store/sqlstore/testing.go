@@ -1,4 +1,4 @@
-package store
+package sqlstore
 
 import (
 	_ "github.com/lib/pq"

@@ -1,7 +1,8 @@
-package store
+package sqlstore
 
 import (
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/model"
+	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
 )
 
 type TeamRepository struct {
@@ -80,7 +81,7 @@ func (teamRepository *TeamRepository) Update(team *model.Team) error {
 	}
 
 	if count == 0 {
-		return ErrRecordNotFound
+		return store.ErrRecordNotFound
 	}
 
 	return nil
@@ -105,7 +106,7 @@ func (teamRepository *TeamRepository) Delete(id int) error {
 	}
 
 	if count == 0 {
-		return ErrRecordNotFound
+		return store.ErrRecordNotFound
 	}
 
 	return nil

@@ -1,9 +1,10 @@
-package store
+package sqlstore
 
 import (
 	"database/sql"
 
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/model"
+	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
 )
 
 type RaceResultRepository struct {
@@ -35,7 +36,7 @@ func (raceResultRepository *RaceResultRepository) Find(id int) (*model.RaceResul
 
 	if rowsErr != nil {
 		if rowsErr == sql.ErrNoRows {
-			return nil, ErrRecordNotFound
+			return nil, store.ErrRecordNotFound
 		}
 
 		return nil, rowsErr
@@ -60,7 +61,7 @@ func (raceResultRepository *RaceResultRepository) FindByRaceID(race_id int) ([]*
 	)
 	if rowsErr != nil {
 		if rowsErr == sql.ErrNoRows {
-			return nil, ErrRecordNotFound
+			return nil, store.ErrRecordNotFound
 		}
 
 		return nil, rowsErr
@@ -94,7 +95,7 @@ func (raceResultRepository *RaceResultRepository) FindByDriverID(driver_id int) 
 	)
 	if rowsErr != nil {
 		if rowsErr == sql.ErrNoRows {
-			return nil, ErrRecordNotFound
+			return nil, store.ErrRecordNotFound
 		}
 
 		return nil, rowsErr
@@ -147,7 +148,7 @@ func (raceResultRepository *RaceResultRepository) Update(raceResult *model.RaceR
 	}
 
 	if count == 0 {
-		return ErrRecordNotFound
+		return store.ErrRecordNotFound
 	}
 
 	return nil
@@ -172,7 +173,7 @@ func (raceResultRepository *RaceResultRepository) Delete(id int) error {
 	}
 
 	if count == 0 {
-		return ErrRecordNotFound
+		return store.ErrRecordNotFound
 	}
 
 	return nil

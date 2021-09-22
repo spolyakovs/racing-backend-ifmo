@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -72,7 +71,6 @@ func (server *server) authenticateUser(next http.Handler) http.Handler {
 
 		user, err := server.store.User().Find(id.(int))
 		if err != nil {
-			fmt.Println("Error " + err.Error())
 			server.error(writer, req, http.StatusUnauthorized, errNotAuthenticated)
 			return
 		}
