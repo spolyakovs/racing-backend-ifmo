@@ -1,7 +1,8 @@
 package sqlstore
 
 import (
-	"time"
+	"database/sql"
+	"fmt"
 
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/model"
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
@@ -12,68 +13,85 @@ type RaceRepository struct {
 }
 
 func (raceRepository *RaceRepository) Create(race *model.Race) error {
-	createRaceQuery := "INSERT INTO races (name, location, date) VALUES ($1, $2, $3) RETURNING id"
-	if err := raceRepository.store.db.QueryRow(
-		createRaceQuery,
-		race.Name, race.Location, race.Date,
-	).Scan(&race.ID); err != nil {
-		return err
-	}
+	createQuery := "INSERT INTO races (name, location, date) VALUES ($1, $2, $3) RETURNING id;"
 
-	return nil
+	return raceRepository.store.db.Get(
+		&race.ID,
+		createQuery,
+		race.Name, race.Location, race.Date,
+	)
 }
 
 func (raceRepository *RaceRepository) Find(id int) (*model.Race, error) {
+	return raceRepository.FindBy("id", id, "")
+}
+
+func (raceRepository *RaceRepository) FindBy(columnName string, value interface{}, condition string) (*model.Race, error) {
 	race := &model.Race{}
 
-	findRaceByIDQuery := "SELECT id, name, location, date FROM races WHERE id = $1"
-	if err := raceRepository.store.db.QueryRow(
-		findRaceByIDQuery,
-		id,
-	).Scan(
-		&race.ID,
-		&race.Name,
-		&race.Location,
-		&race.Date,
+	findQuery := fmt.Sprintf("SELECT * FROM races WHERE %s = $1%s LIMIT 1;", columnName, condition)
+	if err := raceRepository.store.db.Get(
+		race,
+		findQuery,
+		value,
 	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
 		return nil, err
 	}
 
 	return race, nil
 }
 
-func (raceRepository *RaceRepository) FindByDate(date time.Time) (*model.Race, error) {
-	race := &model.Race{}
+func (raceRepository *RaceRepository) FindAllBy(columnName string, value interface{}, condition string) ([]*model.Race, error) {
+	races := []*model.Race{}
 
-	findRaceByDateQuery := "SELECT id, name, location, date FROM races WHERE date = $1"
-	if err := raceRepository.store.db.QueryRow(
-		findRaceByDateQuery,
-		date,
-	).Scan(
-		&race.ID,
-		&race.Name,
-		&race.Location,
-		&race.Date,
+	findQuery := fmt.Sprintf("SELECT * FROM races WHERE %s = $1%s;", columnName, condition)
+	if err := raceRepository.store.db.Select(
+		&races,
+		findQuery,
+		value,
 	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
 		return nil, err
 	}
 
-	return race, nil
+	return races, nil
+}
+
+func (raceRepository *RaceRepository) GetAll() ([]*model.Race, error) {
+	races := []*model.Race{}
+
+	findQuery := "SELECT * FROM races;"
+	if err := raceRepository.store.db.Select(
+		&races,
+		findQuery,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return races, nil
 }
 
 func (raceRepository *RaceRepository) Update(race *model.Race) error {
-	updateRaceQuery := "UPDATE races " +
-		"SET name = $2, " +
-		"location = $3, " +
-		"date = $4 " +
-		"WHERE id = $1"
+	updateQuery := "UPDATE races " +
+		"SET name = :name, " +
+		"location = :location, " +
+		"date = :date " +
+		"WHERE id = :id;"
 
-	countResult, countResultErr := raceRepository.store.db.Exec(
-		updateRaceQuery,
-		race.ID,
-		race.Name,
-		race.Location,
-		race.Date,
+	countResult, countResultErr := raceRepository.store.db.NamedExec(
+		updateQuery,
+		race,
 	)
 
 	if countResultErr != nil {
@@ -94,10 +112,10 @@ func (raceRepository *RaceRepository) Update(race *model.Race) error {
 }
 
 func (raceRepository *RaceRepository) Delete(id int) error {
-	deleteRaceQuery := "DELETE FROM races WHERE id = $1"
+	deleteQuery := "DELETE FROM races WHERE id = $1;"
 
 	countResult, countResultErr := raceRepository.store.db.Exec(
-		deleteRaceQuery,
+		deleteQuery,
 		id,
 	)
 

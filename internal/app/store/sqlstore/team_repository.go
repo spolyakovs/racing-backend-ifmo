@@ -1,6 +1,9 @@
 package sqlstore
 
 import (
+	"database/sql"
+	"fmt"
+
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/model"
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
 )
@@ -10,64 +13,83 @@ type TeamRepository struct {
 }
 
 func (teamRepository *TeamRepository) Create(team *model.Team) error {
-	createTeamQuery := "INSERT INTO teams (name, engine_manufacturer) VALUES ($1, $2) RETURNING id"
-	if err := teamRepository.store.db.QueryRow(
-		createTeamQuery,
+	createQuery := "INSERT INTO teams (name, engine_manufacturer) VALUES ($1, $2) RETURNING id"
+	return teamRepository.store.db.Get(
+		&team.ID,
+		createQuery,
 		team.Name, team.EngineManufacturer,
-	).Scan(&team.ID); err != nil {
-		return err
-	}
-
-	return nil
+	)
 }
 
 func (teamRepository *TeamRepository) Find(id int) (*model.Team, error) {
+	return teamRepository.FindBy("id", id)
+}
+
+func (teamRepository *TeamRepository) FindBy(columnName string, value interface{}) (*model.Team, error) {
 	team := &model.Team{}
 
-	findTeamByIDQuery := "SELECT id, name, engine_manufacturer FROM teams WHERE id = $1"
-	if err := teamRepository.store.db.QueryRow(
-		findTeamByIDQuery,
-		id,
-	).Scan(
-		&team.ID,
-		&team.Name,
-		&team.EngineManufacturer,
+	findQuery := fmt.Sprintf("SELECT * FROM teams WHERE %s = $1 LIMIT 1;", columnName)
+	if err := teamRepository.store.db.Get(
+		team,
+		findQuery,
+		value,
 	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
 		return nil, err
 	}
 
 	return team, nil
 }
 
-func (teamRepository *TeamRepository) FindByName(name string) (*model.Team, error) {
-	team := &model.Team{}
+func (teamRepository *TeamRepository) FindAllBy(columnName string, value interface{}) ([]*model.Team, error) {
+	teams := []*model.Team{}
 
-	findTeamByNameQuery := "SELECT id, name, engine_manufacturer FROM teams WHERE name = $1"
-	if err := teamRepository.store.db.QueryRow(
-		findTeamByNameQuery,
-		name,
-	).Scan(
-		&team.ID,
-		&team.Name,
-		&team.EngineManufacturer,
+	findQuery := fmt.Sprintf("SELECT * FROM teams WHERE %s = $1;", columnName)
+	if err := teamRepository.store.db.Select(
+		&teams,
+		findQuery,
+		value,
 	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
 		return nil, err
 	}
 
-	return team, nil
+	return teams, nil
+}
+
+func (teamRepository *TeamRepository) GetAll() ([]*model.Team, error) {
+	teams := []*model.Team{}
+
+	findQuery := "SELECT * FROM teams;"
+	if err := teamRepository.store.db.Select(
+		&teams,
+		findQuery,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return teams, nil
 }
 
 func (teamRepository *TeamRepository) Update(team *model.Team) error {
-	updateTeamQuery := "UPDATE teams " +
-		"SET name = $2, " +
-		"engine_manufacturer = $3 " +
-		"WHERE id = $1"
+	updateQuery := "UPDATE teams " +
+		`SET name = :name, ` +
+		`engine_manufacturer = :engine_manufacturer ` +
+		`WHERE id = :id;`
 
-	countResult, countResultErr := teamRepository.store.db.Exec(
-		updateTeamQuery,
-		team.ID,
-		team.Name,
-		team.EngineManufacturer,
+	countResult, countResultErr := teamRepository.store.db.NamedExec(
+		updateQuery,
+		team,
 	)
 
 	if countResultErr != nil {
@@ -88,10 +110,10 @@ func (teamRepository *TeamRepository) Update(team *model.Team) error {
 }
 
 func (teamRepository *TeamRepository) Delete(id int) error {
-	deleteTeamQuery := "DELETE FROM teams WHERE id = $1"
+	deleteQuery := "DELETE FROM teams WHERE id = $1"
 
 	countResult, countResultErr := teamRepository.store.db.Exec(
-		deleteTeamQuery,
+		deleteQuery,
 		id,
 	)
 

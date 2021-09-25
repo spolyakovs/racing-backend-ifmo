@@ -1,13 +1,27 @@
 package sqlstore
 
 import (
-	"database/sql"
-
+	"github.com/jmoiron/sqlx"
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
 )
 
+var (
+	pointsByPlace = map[int]int{
+		1:  25,
+		2:  18,
+		3:  15,
+		4:  12,
+		5:  10,
+		6:  8,
+		7:  6,
+		8:  4,
+		9:  2,
+		10: 1,
+	}
+)
+
 type Store struct {
-	db                           *sql.DB
+	db                           *sqlx.DB
 	userRepository               *UserRepository
 	teamRepository               *TeamRepository
 	driverRepository             *DriverRepository
@@ -16,8 +30,12 @@ type Store struct {
 	raceResultRepository         *RaceResultRepository
 }
 
-// TODO: unite into one functions Create(except User), Find..., Update and Delete, probably in "store.go", args: (query string, queryVars ...interface{})
-func New(db *sql.DB) (*Store, error) {
+func New(db *sqlx.DB) (*Store, error) {
+	// points after 10th place are not awarded
+	for i := 11; i <= 20; i++ {
+		pointsByPlace[i] = 0
+	}
+
 	newStore := &Store{
 		db: db,
 	}
@@ -26,10 +44,14 @@ func New(db *sql.DB) (*Store, error) {
 		return nil, err
 	}
 
+	if err := newStore.fillTables(); err != nil {
+		return nil, err
+	}
+
 	return newStore, nil
 }
 
-func (st *Store) User() store.UserRepository {
+func (st *Store) Users() store.UserRepository {
 	if st.userRepository != nil {
 		return st.userRepository
 	}
@@ -41,7 +63,7 @@ func (st *Store) User() store.UserRepository {
 	return st.userRepository
 }
 
-func (st *Store) Team() store.TeamRepository {
+func (st *Store) Teams() store.TeamRepository {
 	if st.teamRepository != nil {
 		return st.teamRepository
 	}
@@ -53,7 +75,7 @@ func (st *Store) Team() store.TeamRepository {
 	return st.teamRepository
 }
 
-func (st *Store) Driver() store.DriverRepository {
+func (st *Store) Drivers() store.DriverRepository {
 	if st.driverRepository != nil {
 		return st.driverRepository
 	}
@@ -65,7 +87,7 @@ func (st *Store) Driver() store.DriverRepository {
 	return st.driverRepository
 }
 
-func (st *Store) Race() store.RaceRepository {
+func (st *Store) Races() store.RaceRepository {
 	if st.raceRepository != nil {
 		return st.raceRepository
 	}
@@ -77,7 +99,7 @@ func (st *Store) Race() store.RaceRepository {
 	return st.raceRepository
 }
 
-func (st *Store) TeamDriverContract() store.TeamDriverContractRepository {
+func (st *Store) TeamDriverContracts() store.TeamDriverContractRepository {
 	if st.teamDriverContractRepository != nil {
 		return st.teamDriverContractRepository
 	}
@@ -89,7 +111,7 @@ func (st *Store) TeamDriverContract() store.TeamDriverContractRepository {
 	return st.teamDriverContractRepository
 }
 
-func (st *Store) RaceResult() store.RaceResultRepository {
+func (st *Store) RaceResults() store.RaceResultRepository {
 	if st.raceResultRepository != nil {
 		return st.raceResultRepository
 	}

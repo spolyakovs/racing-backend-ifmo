@@ -7,11 +7,11 @@ import (
 )
 
 type User struct {
-	ID                int    `json:"id"`
-	Username          string `json:"username"`
-	Email             string `json:"email"`
-	Password          string `json:"password,omitempty"`
-	EncryptedPassword string `json:"-"`
+	ID                int    `json:"id" db:"id,omitempty"`
+	Username          string `json:"username" db:"username"`
+	Email             string `json:"email" db:"email"`
+	EncryptedPassword string `json:"-" db:"encrypted_password"`
+	Password          string `json:"-"`
 }
 
 func (user *User) Validate() error {

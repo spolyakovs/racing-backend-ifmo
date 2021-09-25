@@ -3,17 +3,12 @@ package apiserver
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-)
-
-var (
-	errIncorrectEmailOrPassword = errors.New("Incorrect email or password")
-	errNotAuthenticated         = errors.New("Not authenticated")
 )
 
 func (server *server) setRequestID(next http.Handler) http.Handler {
@@ -64,13 +59,14 @@ func (server *server) authenticateUser(next http.Handler) http.Handler {
 		}
 
 		id, ok := session.Values["user_id"]
-		if !ok {
+		if !ok || id == nil {
 			server.error(writer, req, http.StatusUnauthorized, errNotAuthenticated)
 			return
 		}
 
-		user, err := server.store.User().Find(id.(int))
+		user, err := server.store.Users().Find(id.(int))
 		if err != nil {
+			fmt.Printf("DEBUG: %s\n", err.Error())
 			server.error(writer, req, http.StatusUnauthorized, errNotAuthenticated)
 			return
 		}

@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/model"
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
@@ -11,110 +12,133 @@ type TeamDriverContractRepository struct {
 	store *Store
 }
 
-func (teamDriverContractRepository *TeamDriverContractRepository) Create(teamDriverContract *model.TeamDriverContract) error {
-	createTeamDriverContractQuery := "INSERT INTO team_driver_contracts (from_date, to_date, team_id, driver_id) VALUES ($1, $2, $3, $4) RETURNING id;"
-	if err := teamDriverContractRepository.store.db.QueryRow(
-		createTeamDriverContractQuery,
-		teamDriverContract.FromDate,
-		teamDriverContract.ToDate,
-		teamDriverContract.Team.ID,
-		teamDriverContract.Driver.ID,
-	).Scan(&teamDriverContract.ID); err != nil {
-		return err
+func (teamDriverContractRepository *TeamDriverContractRepository) Create(contract *model.TeamDriverContract) error {
+	if contract.ToDate != "" {
+		createQuery := "INSERT INTO team_driver_contracts (from_date, to_date, team_id, driver_id) VALUES ($1, $2, $3, $4) RETURNING id;"
+		return teamDriverContractRepository.store.db.Get(
+			&contract.ID,
+			createQuery,
+			contract.FromDate,
+			contract.ToDate,
+			contract.Team.ID,
+			contract.Driver.ID,
+		)
+	} else {
+		createQuery := "INSERT INTO team_driver_contracts (from_date, team_id, driver_id) VALUES ($1, $2, $3) RETURNING id;"
+		return teamDriverContractRepository.store.db.Get(
+			&contract.ID,
+			createQuery,
+			contract.FromDate,
+			contract.Team.ID,
+			contract.Driver.ID,
+		)
 	}
-
-	return nil
 }
-
 func (teamDriverContractRepository *TeamDriverContractRepository) Find(id int) (*model.TeamDriverContract, error) {
-	findTeamDriverContractByIDQuery := "SELECT id, from_date, to_date, team_id, driver_id FROM team_driver_contracts WHERE id = $1;"
-	rows, rowsErr := teamDriverContractRepository.store.db.Query(
-		findTeamDriverContractByIDQuery,
-		id,
-	)
-
-	if rowsErr != nil {
-		if rowsErr == sql.ErrNoRows {
-			return nil, store.ErrRecordNotFound
-		}
-
-		return nil, rowsErr
-	}
-	defer rows.Close()
-
-	rows.Next()
-	teamDriverContract, teamDriverContractErr := teamDriverContractRepository.scanFromRows(rows)
-	if teamDriverContractErr != nil {
-		return nil, teamDriverContractErr
-	}
-	return teamDriverContract, nil
+	return teamDriverContractRepository.FindBy("id", id, "")
 }
 
-func (teamDriverContractRepository *TeamDriverContractRepository) FindCurrentByTeamID(id int) ([]*model.TeamDriverContract, error) {
-	findCurrentByTeamIDQuery := "SELECT id FROM team_driver_contracts WHERE team_id = $1 AND CURRENT_DATE BETWEEN from_date AND to_date;"
+func (teamDriverContractRepository *TeamDriverContractRepository) FindBy(columnName string, value interface{}, condition string) (*model.TeamDriverContract, error) {
+	contract := &model.TeamDriverContract{}
 
-	rows, rowsErr := teamDriverContractRepository.store.db.Query(
-		findCurrentByTeamIDQuery,
-		id,
-	)
-	if rowsErr != nil {
-		if rowsErr == sql.ErrNoRows {
-			return nil, store.ErrRecordNotFound
-		}
+	findQuery := fmt.Sprintf("SELECT "+
+		"team_driver_contracts.id AS id, "+
+		"team_driver_contracts.from_date AS from_date, "+
+		"team_driver_contracts.to_date AS to_date, "+
 
-		return nil, rowsErr
-	}
-	defer rows.Close()
+		"teams.id AS \"team.id\", "+
+		"teams.name AS \"team.name\", "+
+		"teams.engine_manufacturer AS \"team.engine_manufacturer\", "+
 
-	var contracts []*model.TeamDriverContract
+		"drivers.id AS \"driver.id\", "+
+		"drivers.first_name AS \"driver.first_name\", "+
+		"drivers.last_name AS \"driver.last_name\", "+
+		"drivers.birth_date AS \"driver.birth_date\" "+
 
-	for rows.Next() {
-		teamDriverContract, err := teamDriverContractRepository.scanFromRows(rows)
-		if err != nil {
-			return contracts, err
-		}
+		"FROM team_driver_contracts "+
 
-		contracts = append(contracts, teamDriverContract)
-	}
+		"LEFT JOIN teams "+
+		"ON (team_driver_contracts.team_id = teams.id) "+
 
-	if err := rows.Err(); err != nil {
-		return contracts, err
-	}
+		"LEFT JOIN drivers "+
+		"ON (team_driver_contracts.driver_id = drivers.id) "+
 
-	return contracts, nil
-}
+		"WHERE team_driver_contracts.%s = $1%s LIMIT 1;", columnName, condition)
 
-func (teamDriverContractRepository *TeamDriverContractRepository) FindCurrentByDriverID(id int) (*model.TeamDriverContract, error) {
-	findDriverByIDQuery := "SELECT id FROM team_driver_contracts WHERE driver_id = $1 AND CURRENT_DATE BETWEEN from_date AND to_date;"
-	var contractID int
-	if err := teamDriverContractRepository.store.db.QueryRow(
-		findDriverByIDQuery,
-		id,
-	).Scan(&contractID); err != nil {
+	if err := teamDriverContractRepository.store.db.Get(
+		contract,
+		findQuery,
+		value,
+	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, store.ErrRecordNotFound
 		}
+
 		return nil, err
 	}
-
-	return teamDriverContractRepository.Find(contractID)
+	return contract, nil
 }
 
-func (teamDriverContractRepository *TeamDriverContractRepository) Update(teamDriverContract *model.TeamDriverContract) error {
-	updateTeamDriverContractQuery := "UPDATE team_driver_contracts " +
-		"SET from_date = $2, " +
-		"to_date = $3, " +
-		"team_id = $4 " +
-		"driver_id = $5, " +
-		"WHERE id = $1;"
+func (teamDriverContractRepository *TeamDriverContractRepository) FindAllBy(columnName string, value interface{}, condition string) ([]*model.TeamDriverContract, error) {
+	contracts := []*model.TeamDriverContract{}
 
-	countResult, countResultErr := teamDriverContractRepository.store.db.Exec(
+	findQuery := fmt.Sprintf("SELECT "+
+		"team_driver_contracts.id AS id, "+
+		"team_driver_contracts.from_date AS from_date, "+
+		"team_driver_contracts.to_date AS to_date, "+
+
+		"teams.id AS \"team.id\", "+
+		"teams.name AS \"team.name\", "+
+		"teams.engine_manufacturer AS \"team.engine_manufacturer\", "+
+
+		"drivers.id AS \"driver.id\", "+
+		"drivers.first_name AS \"driver.first_name\", "+
+		"drivers.last_name AS \"driver.last_name\", "+
+		"drivers.birth_date AS \"driver.birth_date\" "+
+
+		"FROM team_driver_contracts "+
+
+		"LEFT JOIN teams "+
+		"ON (team_driver_contracts.team_id = teams.id) "+
+
+		"LEFT JOIN drivers "+
+		"ON (team_driver_contracts.driver_id = drivers.id) "+
+
+		"WHERE team_driver_contracts.%s = $1%s;", columnName, condition)
+
+	if err := teamDriverContractRepository.store.db.Select(
+		&contracts,
+		findQuery,
+		value,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+	return contracts, nil
+}
+
+func (teamDriverContractRepository *TeamDriverContractRepository) FindCurrentBy(columnName string, value interface{}) (*model.TeamDriverContract, error) {
+	return teamDriverContractRepository.FindBy(columnName, value, "AND CURRENT_DATE BETWEEN team_driver_contracts.from_date AND team_driver_contracts.to_date")
+}
+
+func (teamDriverContractRepository *TeamDriverContractRepository) FindAllCurrentBy(columnName string, value interface{}) ([]*model.TeamDriverContract, error) {
+	return teamDriverContractRepository.FindAllBy(columnName, value, "AND CURRENT_DATE BETWEEN team_driver_contracts.from_date AND team_driver_contracts.to_date")
+}
+
+func (teamDriverContractRepository *TeamDriverContractRepository) Update(contract *model.TeamDriverContract) error {
+	updateTeamDriverContractQuery := "UPDATE team_driver_contracts " +
+		"SET from_date = :from_date, " +
+		"to_date = :to_date, " +
+		"team_id = :team.id " +
+		"driver_id = :driver.id, " +
+		"WHERE id = :id;"
+
+	countResult, countResultErr := teamDriverContractRepository.store.db.NamedExec(
 		updateTeamDriverContractQuery,
-		teamDriverContract.ID,
-		teamDriverContract.FromDate,
-		teamDriverContract.ToDate,
-		teamDriverContract.Team.ID,
-		teamDriverContract.Driver.ID,
+		contract,
 	)
 
 	if countResultErr != nil {
@@ -157,37 +181,4 @@ func (teamDriverContractRepository *TeamDriverContractRepository) Delete(id int)
 	}
 
 	return nil
-}
-
-func (teamDriverContractRepository *TeamDriverContractRepository) scanFromRows(rows *sql.Rows) (*model.TeamDriverContract, error) {
-	var (
-		teamDriverContract *model.TeamDriverContract
-		teamID             int
-		driverID           int
-	)
-
-	if err := rows.Scan(
-		&teamDriverContract.ID,
-		&teamDriverContract.FromDate,
-		&teamDriverContract.ToDate,
-		&teamID,
-		&driverID,
-	); err != nil {
-		return nil, err
-	}
-
-	tmpTeam, teamErr := teamDriverContractRepository.store.Team().Find(teamID)
-	if teamErr != nil {
-		return nil, teamErr
-	}
-
-	tmpDriver, driverErr := teamDriverContractRepository.store.Driver().Find(driverID)
-	if driverErr != nil {
-		return nil, driverErr
-	}
-
-	teamDriverContract.Team = tmpTeam
-	teamDriverContract.Driver = tmpDriver
-
-	return teamDriverContract, nil
 }

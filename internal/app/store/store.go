@@ -1,8 +1,10 @@
 package store
 
 type Store interface {
-	User() UserRepository
-	Team() TeamRepository
-	Driver() DriverRepository
-	Race() RaceRepository
+	Users() UserRepository
+	Teams() TeamRepository
+	Drivers() DriverRepository
+	Races() RaceRepository
+	TeamDriverContracts() TeamDriverContractRepository
+	RaceResults() RaceResultRepository
 }

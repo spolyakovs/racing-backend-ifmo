@@ -1,6 +1,9 @@
 package sqlstore
 
 import (
+	"database/sql"
+	"fmt"
+
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/model"
 	"github.com/spolyakovs/racing-backend-ifmo/internal/app/store"
 )
@@ -10,49 +13,85 @@ type DriverRepository struct {
 }
 
 func (driverRepository *DriverRepository) Create(driver *model.Driver) error {
-	createDriverQuery := "INSERT INTO drivers (first_name, last_name, birth_date) VALUES ($1, $2, $3) RETURNING id;"
-	if err := driverRepository.store.db.QueryRow(
-		createDriverQuery,
-		driver.FirstName, driver.LastName, driver.BirthDate,
-	).Scan(&driver.ID); err != nil {
-		return err
-	}
+	createQuery := "INSERT INTO drivers (first_name, last_name, birth_date) VALUES ($1, $2, $3) RETURNING id;"
 
-	return nil
+	return driverRepository.store.db.Get(
+		&driver.ID,
+		createQuery,
+		driver.FirstName, driver.LastName, driver.BirthDate,
+	)
 }
 
 func (driverRepository *DriverRepository) Find(id int) (*model.Driver, error) {
+	return driverRepository.FindBy("id", id)
+}
+
+func (driverRepository *DriverRepository) FindBy(columnName string, value interface{}) (*model.Driver, error) {
 	driver := &model.Driver{}
 
-	findDriverByIDQuery := "SELECT id, first_name, last_name, birth_date FROM drivers WHERE id = $1;"
-	if err := driverRepository.store.db.QueryRow(
-		findDriverByIDQuery,
-		id,
-	).Scan(
-		&driver.ID,
-		&driver.FirstName,
-		&driver.LastName,
-		&driver.BirthDate,
+	findQuery := fmt.Sprintf("SELECT * FROM drivers WHERE %s = $1 LIMIT 1;", columnName)
+	if err := driverRepository.store.db.Get(
+		driver,
+		findQuery,
+		value,
 	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
 		return nil, err
 	}
 
 	return driver, nil
 }
 
-func (driverRepository *DriverRepository) Update(driver *model.Driver) error {
-	updateDriverQuery := "UPDATE drivers " +
-		"SET first_name = $2, " +
-		"last_name = $3, " +
-		"birth_date = $4 " +
-		"WHERE id = $1;"
+func (driverRepository *DriverRepository) FindAllBy(columnName string, value interface{}) ([]*model.Driver, error) {
+	drivers := []*model.Driver{}
 
-	countResult, countResultErr := driverRepository.store.db.Exec(
-		updateDriverQuery,
-		driver.ID,
-		driver.FirstName,
-		driver.LastName,
-		driver.BirthDate,
+	findQuery := fmt.Sprintf("SELECT * FROM drivers WHERE %s = $1;", columnName)
+	if err := driverRepository.store.db.Select(
+		&drivers,
+		findQuery,
+		value,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return drivers, nil
+}
+
+func (driverRepository *DriverRepository) GetAll() ([]*model.Driver, error) {
+	drivers := []*model.Driver{}
+
+	findQuery := "SELECT * FROM drivers;"
+	if err := driverRepository.store.db.Select(
+		&drivers,
+		findQuery,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return drivers, nil
+}
+
+func (driverRepository *DriverRepository) Update(driver *model.Driver) error {
+	updateQuery := "UPDATE drivers " +
+		"SET first_name = :first_name, " +
+		"last_name = :last_name, " +
+		"birth_date = :birth_date " +
+		"WHERE id = :id;"
+
+	countResult, countResultErr := driverRepository.store.db.NamedExec(
+		updateQuery,
+		driver,
 	)
 
 	if countResultErr != nil {
@@ -73,10 +112,10 @@ func (driverRepository *DriverRepository) Update(driver *model.Driver) error {
 }
 
 func (driverRepository *DriverRepository) Delete(id int) error {
-	deleteDriverQuery := "DELETE FROM drivers WHERE id = $1;"
+	deleteQuery := "DELETE FROM drivers WHERE id = $1;"
 
 	countResult, countResultErr := driverRepository.store.db.Exec(
-		deleteDriverQuery,
+		deleteQuery,
 		id,
 	)
 
