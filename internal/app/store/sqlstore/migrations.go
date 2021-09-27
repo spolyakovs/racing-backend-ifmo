@@ -41,8 +41,7 @@ func (store *Store) createTables() error {
 }
 
 func createTableUsers(tx *sqlx.Tx) error {
-	createTableUsersQuery := "DROP TABLE IF EXISTS users CASCADE; " +
-		"CREATE TABLE IF NOT EXISTS users (" +
+	createTableUsersQuery := "CREATE TABLE IF NOT EXISTS users (" +
 		"id bigserial NOT NULL PRIMARY KEY," +
 		"username varchar NOT NULL UNIQUE," +
 		"email varchar NOT NULL UNIQUE," +
@@ -56,8 +55,7 @@ func createTableUsers(tx *sqlx.Tx) error {
 }
 
 func createTableTeams(tx *sqlx.Tx) error {
-	createTableTeamsQuery := "DROP TABLE IF EXISTS teams CASCADE; " +
-		"CREATE TABLE IF NOT EXISTS teams (" +
+	createTableTeamsQuery := "CREATE TABLE IF NOT EXISTS teams (" +
 		"id bigserial NOT NULL PRIMARY KEY," +
 		"name varchar NOT NULL UNIQUE," +
 		"engine_manufacturer varchar NOT NULL );"
@@ -70,8 +68,7 @@ func createTableTeams(tx *sqlx.Tx) error {
 }
 
 func createTableDrivers(tx *sqlx.Tx) error {
-	createTableDriversQuery := "DROP TABLE IF EXISTS drivers CASCADE; " +
-		"CREATE TABLE IF NOT EXISTS drivers (" +
+	createTableDriversQuery := "CREATE TABLE IF NOT EXISTS drivers (" +
 		"id bigserial NOT NULL PRIMARY KEY," +
 		"first_name varchar NOT NULL," +
 		"last_name varchar NOT NULL," +
@@ -100,8 +97,7 @@ func createTableRaces(tx *sqlx.Tx) error {
 }
 
 func createTableTeamDriverContracts(tx *sqlx.Tx) error {
-	createTableTeamDriverContractsQuery := "DROP TABLE IF EXISTS team_driver_contracts CASCADE; " +
-		"CREATE TABLE IF NOT EXISTS team_driver_contracts (" +
+	createTableTeamDriverContractsQuery := "CREATE TABLE IF NOT EXISTS team_driver_contracts (" +
 		"id bigserial NOT NULL PRIMARY KEY," +
 		"from_date date NOT NULL," +
 		"to_date date," +
@@ -116,8 +112,7 @@ func createTableTeamDriverContracts(tx *sqlx.Tx) error {
 }
 
 func createTableRaceResults(tx *sqlx.Tx) error {
-	createTableRaceResultsQuery := "DROP TABLE IF EXISTS race_results CASCADE; " +
-		"CREATE TABLE IF NOT EXISTS race_results (" +
+	createTableRaceResultsQuery := "CREATE TABLE IF NOT EXISTS race_results (" +
 		"id bigserial NOT NULL PRIMARY KEY," +
 		"place integer NOT NULL," +
 		"points integer NOT NULL DEFAULT 0," +
