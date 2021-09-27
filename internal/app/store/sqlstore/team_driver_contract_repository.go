@@ -120,12 +120,17 @@ func (teamDriverContractRepository *TeamDriverContractRepository) FindAllBy(colu
 	return contracts, nil
 }
 
-func (teamDriverContractRepository *TeamDriverContractRepository) FindCurrentBy(columnName string, value interface{}) (*model.TeamDriverContract, error) {
-	return teamDriverContractRepository.FindBy(columnName, value, "AND CURRENT_DATE BETWEEN team_driver_contracts.from_date AND team_driver_contracts.to_date")
+func (teamDriverContractRepository *TeamDriverContractRepository) FindCurrentBy(columnName string,
+	value interface{}) (*model.TeamDriverContract, error) {
+
+	return teamDriverContractRepository.FindBy(columnName, value,
+		"AND CURRENT_DATE BETWEEN team_driver_contracts.from_date AND team_driver_contracts.to_date")
 }
 
 func (teamDriverContractRepository *TeamDriverContractRepository) FindAllCurrentBy(columnName string, value interface{}) ([]*model.TeamDriverContract, error) {
-	return teamDriverContractRepository.FindAllBy(columnName, value, "AND CURRENT_DATE BETWEEN team_driver_contracts.from_date AND team_driver_contracts.to_date")
+	return teamDriverContractRepository.FindAllBy(columnName,
+		value,
+		"AND CURRENT_DATE BETWEEN team_driver_contracts.from_date AND team_driver_contracts.to_date")
 }
 
 func (teamDriverContractRepository *TeamDriverContractRepository) Update(contract *model.TeamDriverContract) error {
